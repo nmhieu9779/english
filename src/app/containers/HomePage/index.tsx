@@ -4,7 +4,7 @@
  *
  */
 
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
@@ -35,7 +35,7 @@ export const HomePage = memo((props: Props) => {
         <title>HomePage</title>
         <meta name="description" content="Description of HomePage" />
       </Helmet>
-      <Div>{t('')}</Div>
+      <Div>Test</Div>
     </>
   );
 });
