@@ -53,7 +53,7 @@
     "typescript": "3.8.2"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "yarn build && serve -s build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
