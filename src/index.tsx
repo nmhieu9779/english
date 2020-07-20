@@ -24,6 +24,8 @@ import { configureAppStore } from 'store/configureStore';
 // Initialize languages
 import './locales/i18n';
 
+import 'antd/dist/antd.css';
+
 const store = configureAppStore();
 const MOUNT_NODE = document.getElementById('root') as HTMLElement;
 
