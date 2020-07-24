@@ -3,19 +3,36 @@
  * Upload
  *
  */
-import React, { memo, useRef, useState, useMemo } from 'react';
+import React, {
+  memo,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from 'react';
 import styled from 'styled-components/macro';
-import { Table, Typography, List, message } from 'antd';
-import { Select } from 'antd';
+import {
+  Table,
+  Typography,
+  List,
+  message,
+  Input,
+  Spin,
+  Tooltip,
+  Switch,
+  Button,
+} from 'antd';
 import { uploadService } from '../../../services';
 import {
   FileImageOutlined,
   AudioOutlined,
   LoadingOutlined,
+  InfoCircleOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
-import { Spin } from 'antd';
 
-const { Option } = Select;
+const { TextArea } = Input;
 
 interface Props {
   currentBreakpoint: string;
@@ -67,6 +84,12 @@ export const Upload = memo(({ currentBreakpoint }: Props) => {
     { name: string; fileType: string; status: string } | [],
     any,
   ] = useState([]);
+  const [path, setPath] = useState('');
+  const [note, setNote] = useState('');
+  const [clearInput, setClearInput] = useState(true);
+  const [autoUpload, setAutoUpload] = useState(true);
+  const [file, setFile]: [any, any] = useState(undefined);
+  const [fileInput, setFileInput]: [string, any] = useState('');
 
   const preventDefault = e => {
     e.preventDefault();
@@ -88,7 +111,7 @@ export const Upload = memo(({ currentBreakpoint }: Props) => {
     preventDefault(e);
     const files = e.dataTransfer.files;
     if (files.length) {
-      handleSelectedFile(files);
+      setFile(files[0]);
     }
   };
 
@@ -97,33 +120,48 @@ export const Upload = memo(({ currentBreakpoint }: Props) => {
   };
 
   const filesSelected = () => {
+    setFileInput(fileInputRef.current?.value);
     if (fileInputRef.current?.files?.length) {
-      handleSelectedFile(fileInputRef.current?.files);
+      setFile(fileInputRef.current?.files[0]);
     }
   };
 
-  const handleSelectedFile = files => {
-    const handleUploadEnd = ({ status, name }) => {
+  const handleUploadEnd = useCallback(
+    ({ status, name }) => {
       message[status](`Upload ${name} ${status}`);
       setUploads(prevUploads => {
         const index = prevUploads.findIndex(item => item.name === name);
         prevUploads[index]['status'] = status;
         return [...prevUploads];
       });
-    };
-    const [file] = files;
-    const { name, type: fileType } = file;
-    setUploads(prevUploads => [
-      ...prevUploads,
-      { name, fileType, status: 'uploading' },
-    ]);
-    const data = new FormData();
-    data.append('image', file);
-    uploadService
-      .upload(data)
-      .then(() => handleUploadEnd({ status: 'success', name }))
-      .catch(() => handleUploadEnd({ status: 'failure', name }));
-  };
+      setFile(undefined);
+      if (clearInput) {
+        setPath('');
+        setNote('');
+      }
+    },
+    [clearInput],
+  );
+
+  const uploadFile = useCallback(
+    file => {
+      if (!file) return;
+      const { name, type: fileType } = file;
+      setUploads(prevUploads => [
+        ...prevUploads,
+        { name, fileType, status: 'uploading' },
+      ]);
+      const data = new FormData();
+      data.append('image', file);
+      data.append('path', path);
+      data.append('note', note);
+      uploadService
+        .upload(data)
+        .then(() => handleUploadEnd({ status: 'success', name }))
+        .catch(() => handleUploadEnd({ status: 'failure', name }));
+    },
+    [handleUploadEnd, path, note],
+  );
 
   const Uploads = useMemo(
     () =>
@@ -144,24 +182,80 @@ export const Upload = memo(({ currentBreakpoint }: Props) => {
     [uploads],
   );
 
+  const onChangePath = useCallback(({ target: { value } }) => {
+    setPath(value);
+  }, []);
+
+  const onChangeNote = useCallback(({ target: { value } }) => {
+    setNote(value);
+  }, []);
+
+  const onChangeClearInput = useCallback(checked => {
+    setClearInput(checked);
+  }, []);
+
+  const onChangeAutoUpload = useCallback(checked => {
+    setFileInput('');
+    setFile(undefined);
+    setAutoUpload(checked);
+  }, []);
+
+  useEffect(() => {
+    if (autoUpload) {
+      uploadFile(file);
+    }
+  }, [autoUpload, uploadFile, file]);
+
+  const onClickUpload = useCallback(() => {
+    uploadFile(file);
+  }, [uploadFile, file]);
+
   return (
     <Div currentBreakpoint={currentBreakpoint}>
-      <UploadWrapper currentBreakpoint={currentBreakpoint}>
+      <UploadWrapper
+        autoUpload={autoUpload}
+        currentBreakpoint={currentBreakpoint}
+      >
         <div className="upload-wrapper__container">
           <div className="upload-wrapper__option">
-            <span className="header">Upload Option</span>
-            <div className="option-wrapper">
-              <span>Day: </span>
-              <Select>
-                <Option value="jack">Jack</Option>
-              </Select>
+            <div className="header">
+              Upload Option
+              <div>
+                <Switch checked={autoUpload} onChange={onChangeAutoUpload} />
+                <Tooltip className="tooltip" title="Auto upload">
+                  <InfoCircleOutlined className="tooltip__icon" />
+                </Tooltip>
+              </div>
+              <div>
+                <Switch checked={clearInput} onChange={onChangeClearInput} />
+                <Tooltip
+                  className="tooltip"
+                  title="Clear input when uploading successfully"
+                >
+                  <InfoCircleOutlined className="tooltip__icon" />
+                </Tooltip>
+              </div>
             </div>
-            <div className="option-wrapper">
-              <span>Type: </span>
-              <Select>
-                <Option value="jack">Jack</Option>
-              </Select>
+            <div className="input">
+              <Input
+                addonBefore="~/"
+                placeholder="Path"
+                suffix={
+                  <Tooltip title="Path to save the file">
+                    <InfoCircleOutlined className="tooltip__icon" />
+                  </Tooltip>
+                }
+                value={path}
+                onChange={onChangePath}
+              />
             </div>
+            <TextArea
+              className="input"
+              placeholder="Note"
+              autoSize={{ minRows: 3, maxRows: 4 }}
+              value={note}
+              onChange={onChangeNote}
+            />
           </div>
           <div
             className="upload-wrapper__drop-container"
@@ -180,10 +274,25 @@ export const Upload = memo(({ currentBreakpoint }: Props) => {
               type="file"
               multiple
               onChange={filesSelected}
+              value={fileInput}
             />
           </div>
+          {autoUpload ? null : (
+            <Button
+              type="primary"
+              shape="round"
+              className="button-upload"
+              icon={<CloudUploadOutlined />}
+              onClick={onClickUpload}
+              disabled={!file}
+            >
+              Upload
+            </Button>
+          )}
         </div>
-        <div className="upload-wrapper__container">{Uploads}</div>
+        <div className="upload-wrapper__container upload-wrapper__container__list">
+          {Uploads}
+        </div>
       </UploadWrapper>
       <StyledList
         currentbreakpoint={currentBreakpoint}
@@ -222,25 +331,42 @@ const Div = styled.div<{ currentBreakpoint: string }>`
   padding: 20px;
 `;
 
-const UploadWrapper = styled.div<{ currentBreakpoint: string }>`
+const UploadWrapper = styled.div<{
+  currentBreakpoint: string;
+  autoUpload: boolean;
+}>`
   grid-area: 1 / 1 / 2 / 2;
   display: flex;
+  flex-direction: ${({ currentBreakpoint }) =>
+    currentBreakpoint === 'xs' ? 'column' : 'row'};
   max-height: ${({ currentBreakpoint }) =>
     currentBreakpoint === 'xs' ? 'auto' : '45vh'};
   .upload-wrapper__container {
     flex: 1;
-    padding: 20px;
+    padding: ${({ currentBreakpoint }) =>
+      currentBreakpoint === 'xs' ? '0px' : '20px'};
     overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    justify-content: ${({ autoUpload }) =>
+      autoUpload ? 'flex-start' : 'space-between'};
+    align-items: flex-end;
     .upload-wrapper__option {
+      width: 100%;
       .header {
         font-weight: bold;
-        margin-bottom: 20px;
-      }
-      .option-wrapper {
-        margin-bottom: 20px;
-        .ant-select {
-          width: 100%;
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: space-between;
+        .tooltip {
+          margin-left: 5px;
         }
+      }
+      .input {
+        margin-bottom: 10px;
+      }
+      .tooltip__icon {
+        color: 'rgba(0,0,0,.45)';
       }
     }
     .upload-wrapper__drop-container {
@@ -251,6 +377,7 @@ const UploadWrapper = styled.div<{ currentBreakpoint: string }>`
       width: 100%;
       height: 200px;
       border: 1px dashed #001529;
+      user-select: none;
       .drop-message {
         text-align: center;
         color: #001529;
@@ -261,6 +388,13 @@ const UploadWrapper = styled.div<{ currentBreakpoint: string }>`
         display: none;
       }
     }
+    .button-upload {
+      margin-top: ${({ currentBreakpoint }) =>
+        currentBreakpoint === 'xs' ? '10px' : '0'};
+    }
+  }
+  .upload-wrapper__container__list {
+    align-items: initial;
   }
 `;
 
