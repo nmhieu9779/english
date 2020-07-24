@@ -4,7 +4,7 @@
  *
  */
 
-import React, { memo, useState, useCallback } from 'react';
+import React, { memo, useState, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components/macro';
@@ -15,13 +15,35 @@ import { selectHomePage } from './selectors';
 import { homePageSaga } from './saga';
 import { LeftMenu } from '../../components/LeftMenu/Loadable';
 import { Header } from '../../components/Header/Loadable';
+import { Upload } from '../../components/Upload/Loadable';
 import { Layout } from 'antd';
+import { breakpoint } from '../../../helpers';
+
 const { Content } = Layout;
+const { getCurrentBreakpoint } = breakpoint;
 
 interface Props {}
 
 export const HomePage = memo((props: Props) => {
   const [title, setTitle] = useState('');
+  const [currentBreakpoint, setCurrentBreakpoint] = useState(() =>
+    getCurrentBreakpoint(window),
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      const newBreakpoint = getCurrentBreakpoint(window);
+      if (newBreakpoint !== currentBreakpoint) {
+        setCurrentBreakpoint(newBreakpoint);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  });
 
   useInjectReducer({ key: sliceKey, reducer: reducer });
   useInjectSaga({ key: sliceKey, saga: homePageSaga });
@@ -44,8 +66,13 @@ export const HomePage = memo((props: Props) => {
       <StyledLayout>
         <Header title={title} />
         <Layout>
-          <LeftMenu onChangeMenu={onChangeMenu} />
-          <Content>haha</Content>
+          <LeftMenu
+            currentBreakpoint={currentBreakpoint}
+            onChangeMenu={onChangeMenu}
+          />
+          <Content>
+            <Upload currentBreakpoint={currentBreakpoint} />
+          </Content>
         </Layout>
       </StyledLayout>
     </React.Fragment>

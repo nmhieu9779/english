@@ -23,12 +23,13 @@ const Names = {
 
 interface Props {
   onChangeMenu: (value: string) => void;
+  currentBreakpoint: string;
 }
 
 export const LeftMenu = memo((props: Props) => {
   const [collapsed, setCollapsed] = useState(true);
   const [collapsedWidth, setCollapsedWidth]: [number?, any?] = useState(() =>
-    window.innerWidth > 576 ? undefined : 0,
+    props.currentBreakpoint === 'xs' ? 0 : undefined,
   );
   const [selectedKeys, setSelectedKeys] = useState(() => {
     const [{ key: selectedKey } = { key: '' }] = Menus;
