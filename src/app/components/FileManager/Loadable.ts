@@ -6,7 +6,7 @@
 
 import { lazyLoad } from 'utils/loadable';
 
-export const Upload = lazyLoad(
+export const FileManager = lazyLoad(
   () => import('./index'),
-  module => module.Upload,
+  module => module.FileManager,
 );

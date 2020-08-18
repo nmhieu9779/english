@@ -15,7 +15,7 @@ import { selectHomePage } from './selectors';
 import { homePageSaga } from './saga';
 import { LeftMenu } from '../../components/LeftMenu/Loadable';
 import { Header } from '../../components/Header/Loadable';
-import { Upload } from '../../components/Upload/Loadable';
+import { FileManager } from '../../components/FileManager/Loadable';
 import { Layout } from 'antd';
 import { breakpoint } from '../../../helpers';
 
@@ -71,7 +71,7 @@ export const HomePage = memo((props: Props) => {
             onChangeMenu={onChangeMenu}
           />
           <Content>
-            <Upload currentBreakpoint={currentBreakpoint} />
+            <FileManager currentBreakpoint={currentBreakpoint} />
           </Content>
         </Layout>
       </StyledLayout>

@@ -5,20 +5,20 @@
  */
 import React, { memo, useState, useCallback, useEffect } from 'react';
 import { Layout, Menu } from 'antd';
-import { CloudUploadOutlined } from '@ant-design/icons';
+import { FolderOpenTwoTone } from '@ant-design/icons';
 import styled from 'styled-components/macro';
 
 const { Sider } = Layout;
 
 const Menus = [
   {
-    key: 'upload',
-    Icon: CloudUploadOutlined,
+    key: 'fileManager',
+    Icon: FolderOpenTwoTone,
   },
 ];
 
 const Names = {
-  upload: 'Upload',
+  fileManager: 'File Manager',
 };
 
 interface Props {
